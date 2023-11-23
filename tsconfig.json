@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "ESNext",
+    "outDir": "./lib",
+    "rootDir": "./src",
+    "target": "ES2015",
+    "declaration": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["./src"]
+}
