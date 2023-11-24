@@ -39,7 +39,7 @@ export class Signal<T> {
   }
 
   set value(value: T) {
-    this.#_value = value;
+    this.#_value = this.proxify(value);
     this.notify();
   }
 

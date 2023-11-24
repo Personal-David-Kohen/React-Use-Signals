@@ -78,27 +78,15 @@ export const userSignal = createSignal({
   },
 });
 
-//Signals with deep data structures can be updated in two ways:
-//1. By creating a copy of the signal's value using the getValueCopy function
 export const handleUpdateName = (name) => {
-  const copy = userSignal.getValueCopy();
-
-  copy.name = name;
-  userSignal.value = copy;
+  userSignal.value.name = name;
 };
 
-//2. By creating a copy of the signal's value with the spread operator
 export const handleUpdateStreet = (street) => {
-  const copy = { ...userSignal.value };
-
-  copy.address.street = street;
-  userSignal.value = copy;
+  userSignal.value.address.street = street;
 };
 ```
 
-If you mutate the signal's value directly, the component will not be re-rendered.
-
-```jsx
 
 ```jsx
 import { userSignal, handleUpdateName, handleUpdateStreet } from './userSignal';
