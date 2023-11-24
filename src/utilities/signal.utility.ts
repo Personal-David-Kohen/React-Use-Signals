@@ -1,95 +1,104 @@
-import { useEffect, useState } from 'react'
-import { Callback } from '../types/callback.type'
+import { useEffect, useState } from 'react';
+import { Callback } from '../types/callback.type';
+import { createDeepObjectObserver, isObject } from './proxy.utility';
 
 class GlobalSignalEffects {
-  public static active: Function | null = null
+  public static active: Function | null = null;
 }
 
 export class Signal<T> {
-  #_value: T
-  private subscribers = new Set<Callback<T>>()
+  #_value: T;
+  private subscribers = new Set<Callback<T>>();
 
   constructor(initial: T) {
-    this.#_value = initial
+    this.#_value = this.proxify(initial);
   }
 
+  private proxify = (value: T): T => {
+    if (isObject(value)) {
+      return createDeepObjectObserver(value as Object, {
+        onSet: () => {
+          this.notify();
+        },
+      }) as T;
+    }
+
+    return value;
+  };
+
   private notify = () => {
-    this.subscribers.forEach(subscriber => subscriber(this.#_value))
-  }
+    this.subscribers.forEach(subscriber => subscriber(this.#_value));
+  };
 
   get value(): T {
     if (GlobalSignalEffects.active) {
-      this.subscribers.add(GlobalSignalEffects.active as Callback<T>)
+      this.subscribers.add(GlobalSignalEffects.active as Callback<T>);
     }
 
-    return this.#_value
+    return this.#_value;
   }
 
   set value(value: T) {
-    this.#_value = value
-    this.notify()
+    this.#_value = value;
+    this.notify();
   }
 
   public subscribe = (callback: Callback<T>) => {
-    this.subscribers.add(callback)
-  }
+    this.subscribers.add(callback);
+  };
 
   public getShallowCopy(): Signal<T> {
-    const self = this
+    const self = this;
 
     const copy = {
       ...self,
       get value() {
-        return self.value
+        return self.value;
       },
       set value(value: T) {
-        self.value = value
+        self.value = value;
       },
       subscribe: self.subscribe,
-    }
+    };
 
-    return copy
-  }
-
-  public getValueCopy = (): T => {
-    return { ...this.#_value }
+    return copy;
   }
 
   public useStateAdapter(): Signal<T> {
-    const [signal, setSignal] = useState<Signal<T>>(this)
+    const [signal, setSignal] = useState<Signal<T>>(this);
 
     useEffect(() => {
       this.subscribe(() => {
-        setSignal(this.getShallowCopy())
-      })
-    }, [this])
+        setSignal(this.getShallowCopy());
+      });
+    }, [this]);
 
-    return signal
+    return signal;
   }
 }
 
 export const createSignal = <T>(initial: T) => {
-  return new Signal<T>(initial)
-}
+  return new Signal<T>(initial);
+};
 
 export const signalEffect = (callback: Function) => {
-  GlobalSignalEffects.active = callback
-  callback()
-  GlobalSignalEffects.active = null
-}
+  GlobalSignalEffects.active = callback;
+  callback();
+  GlobalSignalEffects.active = null;
+};
 
 export const useSignal = <T>(initial: T) => {
-  const [signal, setSignal] = useState<Signal<T>>()
+  const [signal, setSignal] = useState<Signal<T>>();
 
   useEffect(() => {
-    const signal = createSignal(initial)
+    const signal = createSignal(initial);
 
     signal.subscribe(() => {
-      setSignal(signal.getShallowCopy())
-    })
+      setSignal(signal.getShallowCopy());
+    });
 
-    setSignal(signal)
-  }, [initial])
+    setSignal(signal);
+  }, [initial]);
 
-  return signal
-}
+  return signal;
+};
