@@ -51,6 +51,10 @@ export class Signal<T> {
     return copy
   }
 
+  public getValueCopy = (): T => {
+    return { ...this.#_value }
+  }
+
   public useStateAdapter(): Signal<T> {
     const [signal, setSignal] = useState<Signal<T>>(this)
 
