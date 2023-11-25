@@ -96,11 +96,11 @@ export const signalEffect = (callback: Function) => {
   GlobalSignalEffects.active = null;
 };
 
-export const useSignal = (initial: number) => {
+export const useSignal = <T>(initial: T) => {
   const [_, setRenderKey] = useState(0);
 
   const signal = useMemo(() => {
-    const signal = createSignal(initial);
+    const signal = createSignal<T>(initial);
 
     signal.subscribe(() => {
       setRenderKey(prev => prev + 1);
