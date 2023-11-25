@@ -17,7 +17,7 @@ export const createDeepObjectObserver = <T extends Object>(
   }
 
   const proxy = new Proxy(target, {
-    get: (target, property, receiver) => {
+    get: (target, property) => {
       handler.onGet?.();
       const value = target[property as keyof T];
 
@@ -27,9 +27,12 @@ export const createDeepObjectObserver = <T extends Object>(
 
       return value;
     },
-    set: (target, property, value, receiver) => {
+    set: (object, key, value) => {
+      const result = Reflect.set(object, key, value);
+
       handler.onSet?.();
-      return Reflect.set(target, property, value, receiver);
+
+      return result;
     },
   }) as T;
 

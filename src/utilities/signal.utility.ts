@@ -32,7 +32,9 @@ export class Signal<T> {
   };
 
   #_notify = () => {
-    this.#_subscribers.forEach(subscriber => subscriber(this.#_value));
+    this.#_subscribers.forEach(subscriber => {
+      subscriber(this.#_proxify(this.#_value));
+    });
   };
 
   get value(): T {
@@ -52,7 +54,7 @@ export class Signal<T> {
     this.#_subscribers.add(callback);
   };
 
-  #_getShallowCopy(): Signal<T> {
+  public destructure(): Signal<T> {
     const self = this;
 
     const copy = {
@@ -73,24 +75,11 @@ export class Signal<T> {
 
     useEffect(() => {
       this.subscribe(() => {
-        setSignal(this.#_getShallowCopy());
+        setSignal(this.destructure());
       });
     }, [this]);
 
     return signal;
-  }
-
-  //Magic methods
-  public toString(): string {
-    return JSON.stringify(this.#_value);
-  }
-
-  public toJSON(): T {
-    return this.#_value;
-  }
-
-  public valueOf(): T {
-    return this.#_value;
   }
 }
 
@@ -104,4 +93,18 @@ export const signalEffect = (callback: Function) => {
   GlobalSignalEffects.active = null;
 };
 
-export const useSignal = <T>(initial: T) => createSignal<T>(initial).useStateAdapter();
+export const useSignal = <T>(initial: T) => {
+  const [signal, setSignal] = useState<Signal<T>>();
+
+  useEffect(() => {
+    const signal = createSignal(initial);
+
+    signal.subscribe(() => {
+      setSignal(signal.destructure());
+    });
+
+    setSignal(signal);
+  }, [initial]);
+
+  return signal;
+};

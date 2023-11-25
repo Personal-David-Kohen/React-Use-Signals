@@ -88,13 +88,3 @@ test('Complex Signal Test', () => {
     },
   });
 });
-
-test('Signal Magic Methods Test', () => {
-  const counter = createSignal(0);
-
-  expect(counter.toString()).toBe('0');
-  expect(counter.valueOf()).toBe(0);
-  expect(counter.toJSON()).toBe(0);
-});
-
-
