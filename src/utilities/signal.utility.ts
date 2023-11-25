@@ -1,5 +1,5 @@
 import { Callback } from '../types/callback.type';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createDeepObjectObserver, isObject } from './proxy.utility';
 
 class GlobalSignalEffects {
@@ -37,7 +37,20 @@ export class Signal<T> {
     });
   };
 
-  #_destructure(): Signal<T> {
+  get value(): T {
+    if (GlobalSignalEffects.active) {
+      this.#_subscribers.add(GlobalSignalEffects.active as Callback<T>);
+    }
+
+    return this.#_proxify(this.#_value);
+  }
+
+  set value(value: T) {
+    this.#_value = this.#_proxify(value);
+    this.#_notify();
+  }
+
+  public destructure(): Signal<T> {
     const self = this;
 
     const copy = {
@@ -56,19 +69,6 @@ export class Signal<T> {
     return copy;
   }
 
-  get value(): T {
-    if (GlobalSignalEffects.active) {
-      this.#_subscribers.add(GlobalSignalEffects.active as Callback<T>);
-    }
-
-    return this.#_proxify(this.#_value);
-  }
-
-  set value(value: T) {
-    this.#_value = this.#_proxify(value);
-    this.#_notify();
-  }
-
   public subscribe = (callback: Callback<T>) => {
     this.#_subscribers.add(callback);
   };
@@ -78,7 +78,7 @@ export class Signal<T> {
 
     useEffect(() => {
       this.subscribe(() => {
-        setSignal(this.#_destructure());
+        setSignal(this.destructure());
       });
     }, [this]);
 
@@ -97,17 +97,22 @@ export const signalEffect = (callback: Function) => {
 };
 
 export const useSignal = <T>(initial: T) => {
-  const [_, setRenderKey] = useState(0);
+  const [key, setKey] = useState(0);
+  const signalRef = useRef<Signal<T> | null>(null);
 
   const signal = useMemo(() => {
-    const signal = createSignal<T>(initial);
+    if (!signalRef.current) {
+      const newSignal = createSignal<T>(initial);
 
-    signal.subscribe(() => {
-      setRenderKey(prev => prev + 1);
-    });
+      newSignal.subscribe(value => {
+        setKey(prev => prev + 1);
+      });
 
-    return signal;
-  }, [initial]);
+      signalRef.current = newSignal;
+    }
+
+    return signalRef.current;
+  }, [initial, key]);
 
   return signal;
 };

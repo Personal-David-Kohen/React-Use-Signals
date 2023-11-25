@@ -1,6 +1,6 @@
 {
   "name": "react-use-signals",
-  "version": "1.4.2",
+  "version": "1.4.6",
   "description": "A generic signals based state management package for React JS",
   "scripts": {
     "prebuild": "rimraf lib",
