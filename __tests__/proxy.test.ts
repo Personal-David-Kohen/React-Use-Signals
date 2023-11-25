@@ -1,4 +1,4 @@
-import { createDeepObjectObserver } from '../utilities/proxy.utility';
+import { createDeepObjectObserver } from '../src/utilities/proxy.utility';
 
 test('Deep Observer Test', () => {
   const handler = {

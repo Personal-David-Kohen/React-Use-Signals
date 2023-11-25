@@ -4,7 +4,8 @@
   "description": "A generic signals based state management package for React JS",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "jest --config jestconfig.json"
+    "test": "jest --config jestconfig.json",
+    "prepublish": "npm test && npm run build"
   },
   "repository": {
     "type": "git",

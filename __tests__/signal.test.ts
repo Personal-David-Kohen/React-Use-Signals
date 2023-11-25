@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { act, renderHook } from '@testing-library/react';
-import { createSignal, signalEffect } from '../utilities/signal.utility';
+import { renderHook } from '@testing-library/react';
+import { createSignal, signalEffect } from '../src/utilities/signal.utility';
 
 test('Counter Signals Test', () => {
   const counter = createSignal(0);
@@ -30,8 +30,7 @@ test('React Signal Test', () => {
   const useEffectCallback = jest.fn();
 
   signalEffect(() => {
-    console.log(counterSignal.value);
-    effectCallback();
+    effectCallback(counterSignal.value);
   });
 
   const { result: counter } = renderHook(() => counterSignal.useStateAdapter());
@@ -89,3 +88,13 @@ test('Complex Signal Test', () => {
     },
   });
 });
+
+test('Signal Magic Methods Test', () => {
+  const counter = createSignal(0);
+
+  expect(counter.toString()).toBe('0');
+  expect(counter.valueOf()).toBe(0);
+  expect(counter.toJSON()).toBe(0);
+});
+
+
