@@ -37,7 +37,20 @@ export class Signal<T> {
     });
   };
 
-  #_destructure(): Signal<T> {
+  get value(): T {
+    if (GlobalSignalEffects.active) {
+      this.#_subscribers.add(GlobalSignalEffects.active as Callback<T>);
+    }
+
+    return this.#_proxify(this.#_value);
+  }
+
+  set value(value: T) {
+    this.#_value = this.#_proxify(value);
+    this.#_notify();
+  }
+
+  public destructure(): Signal<T> {
     const self = this;
 
     const copy = {
@@ -56,19 +69,6 @@ export class Signal<T> {
     return copy;
   }
 
-  get value(): T {
-    if (GlobalSignalEffects.active) {
-      this.#_subscribers.add(GlobalSignalEffects.active as Callback<T>);
-    }
-
-    return this.#_proxify(this.#_value);
-  }
-
-  set value(value: T) {
-    this.#_value = this.#_proxify(value);
-    this.#_notify();
-  }
-
   public subscribe = (callback: Callback<T>) => {
     this.#_subscribers.add(callback);
   };
@@ -78,7 +78,7 @@ export class Signal<T> {
 
     useEffect(() => {
       this.subscribe(() => {
-        setSignal(this.#_destructure());
+        setSignal(this.destructure());
       });
     }, [this]);
 
@@ -111,7 +111,7 @@ export const useSignal = <T>(initial: T) => {
       signalRef.current = newSignal;
     }
 
-    return signalRef.current;
+    return signalRef.current.destructure();
   }, [initial, key]);
 
   return signal;
