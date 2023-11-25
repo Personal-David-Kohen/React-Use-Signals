@@ -8,46 +8,51 @@ class GlobalSignalEffects {
 
 export class Signal<T> {
   #_value: T;
-  private subscribers = new Set<Callback<T>>();
+  #_proxies = new WeakMap();
+  #_subscribers = new Set<Callback<T>>();
 
   constructor(initial: T) {
-    this.#_value = this.proxify(initial);
+    this.#_value = initial;
   }
 
-  private proxify = (value: T): T => {
-    if (isObject(value)) {
-      return createDeepObjectObserver(value as Object, {
-        onSet: () => {
-          this.notify();
-        },
-      }) as T;
+  #_proxify = (value: T): T => {
+    if (!isObject(value)) {
+      return value;
     }
 
-    return value;
+    return createDeepObjectObserver(
+      value as Object,
+      {
+        onSet: () => {
+          this.#_notify();
+        },
+      },
+      this.#_proxies,
+    ) as T;
   };
 
-  private notify = () => {
-    this.subscribers.forEach(subscriber => subscriber(this.#_value));
+  #_notify = () => {
+    this.#_subscribers.forEach(subscriber => subscriber(this.#_value));
   };
 
   get value(): T {
     if (GlobalSignalEffects.active) {
-      this.subscribers.add(GlobalSignalEffects.active as Callback<T>);
+      this.#_subscribers.add(GlobalSignalEffects.active as Callback<T>);
     }
 
-    return this.#_value;
+    return this.#_proxify(this.#_value);
   }
 
   set value(value: T) {
-    this.#_value = this.proxify(value);
-    this.notify();
+    this.#_value = this.#_proxify(value);
+    this.#_notify();
   }
 
   public subscribe = (callback: Callback<T>) => {
-    this.subscribers.add(callback);
+    this.#_subscribers.add(callback);
   };
 
-  public getShallowCopy(): Signal<T> {
+  #_getShallowCopy(): Signal<T> {
     const self = this;
 
     const copy = {
@@ -58,7 +63,6 @@ export class Signal<T> {
       set value(value: T) {
         self.value = value;
       },
-      subscribe: self.subscribe,
     };
 
     return copy;
@@ -69,11 +73,24 @@ export class Signal<T> {
 
     useEffect(() => {
       this.subscribe(() => {
-        setSignal(this.getShallowCopy());
+        setSignal(this.#_getShallowCopy());
       });
     }, [this]);
 
     return signal;
+  }
+
+  //Magic methods
+  public toString(): string {
+    return JSON.stringify(this.#_value);
+  }
+
+  public toJSON(): T {
+    return this.#_value;
+  }
+
+  public valueOf(): T {
+    return this.#_value;
   }
 }
 
@@ -87,18 +104,4 @@ export const signalEffect = (callback: Function) => {
   GlobalSignalEffects.active = null;
 };
 
-export const useSignal = <T>(initial: T) => {
-  const [signal, setSignal] = useState<Signal<T>>();
-
-  useEffect(() => {
-    const signal = createSignal(initial);
-
-    signal.subscribe(() => {
-      setSignal(signal.getShallowCopy());
-    });
-
-    setSignal(signal);
-  }, [initial]);
-
-  return signal;
-};
+export const useSignal = <T>(initial: T) => createSignal<T>(initial).useStateAdapter();
