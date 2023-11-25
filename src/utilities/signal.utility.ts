@@ -37,6 +37,25 @@ export class Signal<T> {
     });
   };
 
+  #_destructure(): Signal<T> {
+    const self = this;
+
+    const copy = {
+      ...self,
+      get value() {
+        return self.value;
+      },
+      set value(value: T) {
+        self.value = value;
+      },
+      subscribe: (callback: Callback<T>) => {
+        self.subscribe(callback);
+      },
+    };
+
+    return copy;
+  }
+
   get value(): T {
     if (GlobalSignalEffects.active) {
       this.#_subscribers.add(GlobalSignalEffects.active as Callback<T>);
@@ -55,15 +74,15 @@ export class Signal<T> {
   };
 
   public useStateAdapter(): Signal<T> {
-    const [_, setRenderKey] = useState(0);
+    const [signal, setSignal] = useState<Signal<T>>(this);
 
     useEffect(() => {
       this.subscribe(() => {
-        setRenderKey(prev => prev + 1);
+        setSignal(this.#_destructure());
       });
-    }, []);
+    }, [this]);
 
-    return this;
+    return signal;
   }
 }
 
