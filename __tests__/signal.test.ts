@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { createSignal, signalEffect } from '../src/utilities/signal.utility';
 
 test('Counter Signals Test', () => {

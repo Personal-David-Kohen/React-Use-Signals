@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { Callback } from '../types/callback.type';
+import { useEffect, useMemo, useState } from 'react';
 import { createDeepObjectObserver, isObject } from './proxy.utility';
 
 class GlobalSignalEffects {
@@ -54,32 +54,16 @@ export class Signal<T> {
     this.#_subscribers.add(callback);
   };
 
-  public destructure(): Signal<T> {
-    const self = this;
-
-    const copy = {
-      ...self,
-      get value() {
-        return self.value;
-      },
-      set value(value: T) {
-        self.value = value;
-      },
-    };
-
-    return copy;
-  }
-
   public useStateAdapter(): Signal<T> {
-    const [signal, setSignal] = useState<Signal<T>>(this);
+    const [_, setRenderKey] = useState(0);
 
     useEffect(() => {
       this.subscribe(() => {
-        setSignal(this.destructure());
+        setRenderKey(prev => prev + 1);
       });
-    }, [this]);
+    }, []);
 
-    return signal;
+    return this;
   }
 }
 
@@ -93,17 +77,17 @@ export const signalEffect = (callback: Function) => {
   GlobalSignalEffects.active = null;
 };
 
-export const useSignal = <T>(initial: T) => {
-  const [signal, setSignal] = useState<Signal<T>>();
+export const useSignal = (initial: number) => {
+  const [_, setRenderKey] = useState(0);
 
-  useEffect(() => {
+  const signal = useMemo(() => {
     const signal = createSignal(initial);
 
     signal.subscribe(() => {
-      setSignal(signal.destructure());
+      setRenderKey(prev => prev + 1);
     });
 
-    setSignal(signal);
+    return signal;
   }, [initial]);
 
   return signal;
