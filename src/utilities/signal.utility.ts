@@ -46,7 +46,7 @@ export class Signal<T> {
   }
 
   set value(value: T) {
-    this.#_value = this.#_proxify(value);
+    this.#_value = value;
     this.#_notify();
   }
 
@@ -98,20 +98,20 @@ export const signalEffect = (callback: Function) => {
 
 export const useSignal = <T>(initial: T) => {
   const [key, setKey] = useState(0);
-  const signalRef = useRef<Signal<T> | null>(null);
+  const ref = useRef<Signal<T> | null>(null);
 
   const signal = useMemo(() => {
-    if (!signalRef.current) {
-      const newSignal = createSignal<T>(initial);
+    if (!ref.current) {
+      const instance = createSignal<T>(initial);
 
-      newSignal.subscribe(value => {
+      instance.subscribe(() => {
         setKey(prev => prev + 1);
       });
 
-      signalRef.current = newSignal;
+      ref.current = instance;
     }
 
-    return signalRef.current.destructure();
+    return ref.current;
   }, [initial, key]);
 
   return signal;
