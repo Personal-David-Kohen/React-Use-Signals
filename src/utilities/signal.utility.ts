@@ -1,6 +1,6 @@
-import { Callback } from '../types/callback.type';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { createDeepObjectObserver, isObject } from './proxy.utility';
+import { Callback } from "../types/callback.type";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createDeepObjectObserver, isObject } from "./proxy.utility";
 
 class GlobalSignalEffects {
   public static active: Function | null = null;
@@ -8,7 +8,6 @@ class GlobalSignalEffects {
 
 export class Signal<T> {
   #_value: T;
-  #_proxies = new WeakMap();
   #_subscribers = new Set<Callback<T>>();
 
   constructor(initial: T) {
@@ -20,19 +19,15 @@ export class Signal<T> {
       return value;
     }
 
-    return createDeepObjectObserver(
-      value as Object,
-      {
-        onSet: () => {
-          this.#_notify();
-        },
+    return createDeepObjectObserver(value as Object, {
+      onSet: () => {
+        this.#_notify();
       },
-      this.#_proxies,
-    ) as T;
+    }) as T;
   };
 
   #_notify = () => {
-    this.#_subscribers.forEach(subscriber => {
+    this.#_subscribers.forEach((subscriber) => {
       subscriber(this.#_proxify(this.#_value));
     });
   };
@@ -50,7 +45,7 @@ export class Signal<T> {
     this.#_notify();
   }
 
-  public destructure(): Signal<T> {
+  public clone(): Signal<T> {
     const self = this;
 
     const copy = {
@@ -78,7 +73,7 @@ export class Signal<T> {
 
     useEffect(() => {
       this.subscribe(() => {
-        setSignal(this.destructure());
+        setSignal(this.clone());
       });
     }, [this]);
 
@@ -105,13 +100,13 @@ export const useSignal = <T>(initial: T) => {
       const instance = createSignal<T>(initial);
 
       instance.subscribe(() => {
-        setKey(prev => prev + 1);
+        setKey((prev) => prev + 1);
       });
 
       ref.current = instance;
     }
 
-    return ref.current;
+    return ref.current.clone();
   }, [initial, key]);
 
   return signal;
