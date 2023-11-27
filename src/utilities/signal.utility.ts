@@ -1,6 +1,6 @@
-import { Callback } from "../types/callback.type";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createDeepObjectObserver, isObject } from "./proxy.utility";
+import { Callback } from '../types/callback.type';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createDeepObjectObserver, isObject } from './proxy.utility';
 
 class GlobalSignalEffects {
   public static active: Function | null = null;
@@ -9,6 +9,7 @@ class GlobalSignalEffects {
 export class Signal<T> {
   #_value: T;
   #_subscribers = new Set<Callback<T>>();
+  #subscriber_blacklist = new Set<Callback<T>>();
 
   constructor(initial: T) {
     this.#_value = initial;
@@ -20,14 +21,19 @@ export class Signal<T> {
     }
 
     return createDeepObjectObserver(value as Object, {
-      onSet: () => {
+      beforeSet: () => {
+        this.#subscriber_blacklist.add(GlobalSignalEffects.active as Callback<T>);
+      },
+      afterSet: () => {
         this.#_notify();
       },
     }) as T;
   };
 
   #_notify = () => {
-    this.#_subscribers.forEach((subscriber) => {
+    const subscribers = [...this.#_subscribers].filter(subscriber => !this.#subscriber_blacklist.has(subscriber));
+
+    subscribers.forEach(subscriber => {
       subscriber(this.#_proxify(this.#_value));
     });
   };
@@ -41,6 +47,8 @@ export class Signal<T> {
   }
 
   set value(value: T) {
+    this.#subscriber_blacklist.add(GlobalSignalEffects.active as Callback<T>);
+
     this.#_value = value;
     this.#_notify();
   }
@@ -100,7 +108,7 @@ export const useSignal = <T>(initial: T) => {
       const instance = createSignal<T>(initial);
 
       instance.subscribe(() => {
-        setKey((prev) => prev + 1);
+        setKey(prev => prev + 1);
       });
 
       ref.current = instance;

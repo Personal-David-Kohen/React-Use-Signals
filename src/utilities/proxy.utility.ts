@@ -1,6 +1,8 @@
 export interface IObserverHandler {
-  onGet?: () => void;
-  onSet?: () => void;
+  beforeGet?: () => void;
+  afterGet?: () => void;
+  beforeSet?: () => void;
+  afterSet?: () => void;
 }
 
 export const isObject = (value: unknown) => {
@@ -10,8 +12,11 @@ export const isObject = (value: unknown) => {
 export const createDeepObjectObserver = <T extends Object>(target: T, handler: IObserverHandler): T => {
   const proxy = new Proxy(target, {
     get: (target, property) => {
-      handler.onGet?.();
+      handler.beforeGet?.();
+
       const value = target[property as keyof T];
+
+      handler.afterGet?.();
 
       if (isObject(value)) {
         return createDeepObjectObserver(value as Object, handler);
@@ -20,11 +25,14 @@ export const createDeepObjectObserver = <T extends Object>(target: T, handler: I
       return value;
     },
     set: (object, key, value) => {
-      const result = Reflect.set(object, key, value);
+      handler.beforeSet?.();
+      const success = Reflect.set(object, key, value);
 
-      handler.onSet?.();
+      if (success) {
+        handler.afterSet?.();
+      }
 
-      return result;
+      return success;
     },
   }) as T;
 
