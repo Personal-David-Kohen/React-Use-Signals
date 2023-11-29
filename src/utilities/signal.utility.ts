@@ -8,30 +8,50 @@ class GlobalSignalEffects {
 
 export class Signal<T> {
   #_value: T;
+  #_proxy: T | null = null;
   #_subscribers = new Set<Callback<T>>();
-  #subscriber_blacklist = new Set<Callback<T>>();
+  #_subscriber_blacklist = new Set<Callback<T>>();
 
   constructor(initial: T) {
     this.#_value = initial;
   }
+
+  #_clear_proxy = () => {
+    this.#_proxy = null;
+  };
+
+  #_unsubscribe = (callback: Callback<T> | null) => {
+    if (callback) {
+      this.#_subscriber_blacklist.add(callback);
+    }
+  };
 
   #_proxify = (value: T): T => {
     if (!isObject(value)) {
       return value;
     }
 
-    return createDeepObjectObserver(value as Object, {
+    if (this.#_proxy) {
+      return this.#_proxy;
+    }
+
+    const proxy = createDeepObjectObserver(value as Object, {
       beforeSet: () => {
-        this.#subscriber_blacklist.add(GlobalSignalEffects.active as Callback<T>);
+        this.#_clear_proxy();
+        this.#_unsubscribe(GlobalSignalEffects.active as Callback<T>);
       },
       afterSet: () => {
         this.#_notify();
       },
     }) as T;
+
+    this.#_proxy = proxy;
+
+    return proxy;
   };
 
   #_notify = () => {
-    const subscribers = [...this.#_subscribers].filter(subscriber => !this.#subscriber_blacklist.has(subscriber));
+    const subscribers = [...this.#_subscribers].filter(subscriber => !this.#_subscriber_blacklist.has(subscriber));
 
     subscribers.forEach(subscriber => {
       subscriber(this.#_proxify(this.#_value));
@@ -40,15 +60,15 @@ export class Signal<T> {
 
   get value(): T {
     if (GlobalSignalEffects.active) {
-      this.#_subscribers.add(GlobalSignalEffects.active as Callback<T>);
+      this.subscribe(GlobalSignalEffects.active as Callback<T>);
     }
 
     return this.#_proxify(this.#_value);
   }
 
   set value(value: T) {
-    this.#subscriber_blacklist.add(GlobalSignalEffects.active as Callback<T>);
-
+    this.#_clear_proxy();
+    this.#_unsubscribe(GlobalSignalEffects.active as Callback<T>);
     this.#_value = value;
     this.#_notify();
   }
@@ -108,14 +128,15 @@ export const useSignal = <T>(initial: T) => {
       const instance = createSignal<T>(initial);
 
       instance.subscribe(() => {
+        ref.current = instance.clone();
         setKey(prev => prev + 1);
       });
 
       ref.current = instance;
     }
 
-    return ref.current.clone();
-  }, [initial, key]);
+    return ref.current;
+  }, [key]);
 
   return signal;
 };
