@@ -14,7 +14,8 @@ test('Deep Observer Test', () => {
     },
   };
 
-  const proxy = createDeepObjectObserver(target, handler);
+  const proxyCache = new WeakMap<Object, Object>();
+  const proxy = createDeepObjectObserver(target, handler, proxyCache);
 
   expect(proxy.a.b.c).toBe(1);
   expect(handler.afterGet).toHaveBeenCalledTimes(3);

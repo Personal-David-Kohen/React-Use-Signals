@@ -8,18 +8,13 @@ class GlobalSignalEffects {
 
 export class Signal<T> {
   #_value: T;
-  #_proxy: T | null = null;
   #_subscribers = new Set<Callback<T>>();
+  #_proxy_cache = new WeakMap<Object, Object>();
   #_subscriber_blacklist = new Set<Callback<T>>();
 
   constructor(initial: T) {
     this.#_value = initial;
   }
-
-  #_clear_proxy = () => {
-    this.#_proxy = null;
-  };
-
   #_unsubscribe = (callback: Callback<T> | null) => {
     if (callback) {
       this.#_subscriber_blacklist.add(callback);
@@ -31,21 +26,18 @@ export class Signal<T> {
       return value;
     }
 
-    if (this.#_proxy) {
-      return this.#_proxy;
-    }
-
-    const proxy = createDeepObjectObserver(value as Object, {
-      beforeSet: () => {
-        this.#_clear_proxy();
-        this.#_unsubscribe(GlobalSignalEffects.active as Callback<T>);
+    const proxy = createDeepObjectObserver(
+      value as Object,
+      {
+        beforeSet: () => {
+          this.#_unsubscribe(GlobalSignalEffects.active as Callback<T>);
+        },
+        afterSet: () => {
+          this.#_notify();
+        },
       },
-      afterSet: () => {
-        this.#_notify();
-      },
-    }) as T;
-
-    this.#_proxy = proxy;
+      this.#_proxy_cache,
+    ) as T;
 
     return proxy;
   };
@@ -67,7 +59,6 @@ export class Signal<T> {
   }
 
   set value(value: T) {
-    this.#_clear_proxy();
     this.#_unsubscribe(GlobalSignalEffects.active as Callback<T>);
     this.#_value = value;
     this.#_notify();
@@ -90,6 +81,10 @@ export class Signal<T> {
     };
 
     return copy;
+  }
+
+  public peek(): T {
+    return this.#_value;
   }
 
   public subscribe = (callback: Callback<T>) => {
