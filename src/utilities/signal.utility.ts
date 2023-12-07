@@ -95,25 +95,6 @@ export class Signal<T> {
     return copy;
   };
 
-  public readonlyClone = () => {
-    const self = this;
-
-    const copy = {
-      ...self,
-      get value() {
-        return self.value;
-      },
-      set value(_) {
-        throw new Error('Cannot set readonly signal');
-      },
-      subscribe: (callback: Callback<T>) => {
-        self.subscribe(callback);
-      },
-    };
-
-    return copy;
-  };
-
   public peek = (): T => {
     return this.#_value;
   };
@@ -151,7 +132,7 @@ export const signalEffect = (callback: Function) => {
   GlobalSignalEffects.active = null;
 };
 
-export const computedSignal = <T>(callback: () => T): Signal<T> => {
+export const computedSignal = <T>(callback: () => T) => {
   const signal = createSignal<T>(callback());
 
   signalEffect(() => {
@@ -162,7 +143,7 @@ export const computedSignal = <T>(callback: () => T): Signal<T> => {
     }
   });
 
-  return signal.readonlyClone();
+  return signal;
 };
 
 export const useSignal = <T>(initial: T) => {
