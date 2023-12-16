@@ -3,10 +3,30 @@ export interface IObserverHandler {
   afterGet?: () => void;
   beforeSet?: () => void;
   afterSet?: () => void;
+  beforeDelete?: () => void;
+  afterDelete?: () => void;
 }
 
 export const isObject = (value: unknown) => {
   return typeof value === 'object' && value !== null;
+};
+
+export const dereference = <T>(value: unknown) => {
+  if (!isObject(value)) {
+    return value as T;
+  }
+
+  const result: Record<string, unknown> = {};
+
+  for (const [key, element] of Object.entries(value as Record<string, unknown>)) {
+    result[key] = dereference(element);
+  }
+
+  if (Array.isArray(value)) {
+    return Object.values(result) as unknown as T;
+  }
+
+  return result as T;
 };
 
 export const createDeepObjectObserver = <T extends Object>(
@@ -41,13 +61,33 @@ export const createDeepObjectObserver = <T extends Object>(
       cache.delete(object);
 
       handler.beforeSet?.();
-      const success = Reflect.set(object, key, value);
+      const success = Reflect.set(object, key, dereference(value));
 
       if (success) {
         handler.afterSet?.();
       }
 
       return success;
+    },
+    deleteProperty(object, key) {
+      if (key in object) {
+        parents.forEach(parent => {
+          cache.delete(parent);
+        });
+
+        cache.delete(object);
+
+        handler.beforeDelete?.();
+        const success = Reflect.deleteProperty(object, key);
+
+        if (success) {
+          handler.afterDelete?.();
+        }
+
+        return success;
+      }
+
+      return false;
     },
   }) as T;
 

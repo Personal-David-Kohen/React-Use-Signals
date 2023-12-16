@@ -195,6 +195,56 @@ export const userSignal: Signal<User> = createSignal({
 });
 ```
 
+### Deleting Object Properties
+
+As of version 1.7.2, deleting object properties using the `delete` keyword is supported.
+
+```jsx
+import { createSignal } from 'react-use-signals';
+
+type IMember = {
+  name: string;
+  age: number;
+};
+
+type State = Record<string, IMember>;
+
+export const memberSignal = createSignal<State>({
+  '1': {
+    name: 'John Doe',
+    age: 42,
+  },
+  '2': {
+    name: 'Jane Doe',
+    age: 36,
+  },
+});
+
+const handleDelete = (id: string) => {
+  if (memberSignal.value[id])
+    delete memberSignal.value[id];
+  }
+};
+```
+
+### Debugging
+
+If you try to console.log a signal's value, you will notice that it is wrapped in a Proxy object.
+This is because the signal's value is reactive and the Proxy is used to track changes to the value.
+
+If you want to log the actual value, you can use the `peek` function.
+
+```jsx
+import { counterSignal } from './counterSignal';
+
+console.log(counterSignal.peek());
+```
+
+### Behind the Scenes
+
+If you are interested in how this package works, you can check out this article on Medium [The Quest for Signals in React](https://medium.com/@personal.david.kohen/the-quest-for-signals-in-react-usestate-on-steroids-71eb9fc87c14).
+Where I explain how I came up with this solution and how it works under the hood.
+
 ### Stay in touch
 
 If you have any questions or suggestions, feel free to open an issue on [Github](https://github.com/Personal-David-Kohen/React-Use-Signals.git).
