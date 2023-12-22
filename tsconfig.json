@@ -6,6 +6,7 @@
     "rootDir": "./src",
     "target": "ES2015",
     "declaration": true,
+    "removeComments": false,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true

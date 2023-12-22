@@ -16,9 +16,8 @@ For Yarn users:
 yarn add react-use-signals
 ```
 
-## Usage
 
-### Creating a Signal
+## Creating a Signal
 
 ```jsx
 // counterSignal.js
@@ -31,7 +30,7 @@ export const handleIncrement = () => {
 };
 ```
 
-### Using a Signal
+## Using a Signal
 
 ```jsx
 import { counterSignal, handleIncrement } from './counterSignal';
@@ -48,7 +47,7 @@ const Counter = () => {
 };
 ```
 
-### Reactivity
+## Reactivity
 
 As you can see in the example above, the `Counter` component is subscribed to the `counterSignal` and will be re-rendered whenever the signal's value changes.
 
@@ -58,7 +57,7 @@ Utility functions like handleIncrement in the example above can be used to updat
 
 This eliminates the need for prop drilling and setters and makes it easy to share state between components.
 
-### Complex Data Structures
+## Complex Data Structures
 
 Signals can hold any type of data, including complex data structures like objects and arrays.
 
@@ -114,11 +113,11 @@ const User = () => {
 };
 ```
 
-### Effects
+## Effects
 
 There are two ways to create effects with Signals.
 
-#### 1. Using the `useEffect` hook
+### 1. Using the `useEffect` hook
 
 Signals can be used with the `useEffect` hook just like any other React state.
 
@@ -141,7 +140,7 @@ const Counter = () => {
 };
 ```
 
-#### 2. Using the `signalEffect` function
+### 2. Using the `signalEffect` function
 
 The signalEffect function allows you to create a function that will be called whenever the signal's value changes.
 It is similar to the `useEffect` hook, but is designed to be used outside of React components.
@@ -157,7 +156,71 @@ signalEffect(() => {
 });
 ```
 
-### Typescript
+## Using Signals as a Store
+
+Signals can be used as a store by exporting the signal's value and utility functions from a separate file.
+
+In order to optimize performance, you can use the `useSelector` hook to subscribe to only the values you need.
+
+This will prevent your component from re-rendering when other properties of the signal's value change.
+
+```jsx
+// user.store.js
+
+import { createSignal } from 'react-use-signals';
+
+export const userSignal = createSignal({
+  name: 'John Doe',
+  age: 42,
+  address: {
+    street: '123 Main St',
+    city: 'New York',
+    state: 'NY',
+    zip: '10001',
+  },
+});
+
+export const handleUpdateName = (name) => {
+  userSignal.value.name = name;
+};
+
+export const handleUpdateStreet = (street) => {
+  userSignal.value.address.street = street;
+};
+```
+
+```jsx
+// UserDetails.jsx
+
+import { userSignal, handleUpdateName, handleUpdateStreet } from './user.store';
+
+const User = () => {
+  const username = userSignal.useSelector((state) => state.value.name);
+
+  return (
+    <div>
+      <p>Name: {username}</p>
+      // Updating the name will cause this component to re-render since with selected the name property from the signal's value.
+      <input
+        type="text"
+        value={username}
+        onChange={(e) => handleUpdateName(e.target.value)}
+        />
+
+      // Updating the street will not cause this component to re-render since we did not select the street property from the signal's value.
+      <p>Street: {userSignal.value.address.street}</p>
+      <input
+        type="text"
+        value={userSignal.value.address.street}
+        onChange={(e) => handleUpdateStreet(e.target.value)}
+      />   
+    </div>
+  );
+};
+```
+
+
+## Typescript
 
 Signals can be used with Typescript by providing a type argument to the `createSignal` function.
 
@@ -195,7 +258,7 @@ export const userSignal: Signal<User> = createSignal({
 });
 ```
 
-### Deleting Object Properties
+## Deleting Object Properties
 
 As of version 1.7.2, deleting object properties using the `delete` keyword is supported.
 
@@ -227,7 +290,7 @@ const handleDelete = (id: string) => {
 };
 ```
 
-### Debugging
+## Debugging
 
 If you try to console.log a signal's value, you will notice that it is wrapped in a Proxy object.
 This is because the signal's value is reactive and the Proxy is used to track changes to the value.
@@ -240,12 +303,12 @@ import { counterSignal } from './counterSignal';
 console.log(counterSignal.peek());
 ```
 
-### Behind the Scenes
+## Behind the Scenes
 
 If you are interested in how this package works, you can check out this article on Medium [The Quest for Signals in React](https://medium.com/@personal.david.kohen/the-quest-for-signals-in-react-usestate-on-steroids-71eb9fc87c14).
 Where I explain how I came up with this solution and how it works under the hood.
 
-### Stay in touch
+## Stay in touch
 
 If you have any questions or suggestions, feel free to open an issue on [Github](https://github.com/Personal-David-Kohen/React-Use-Signals.git).
 
