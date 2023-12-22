@@ -153,18 +153,18 @@ export class Signal<T> {
 
   /**
    * A React hook that helps optimize the selector so that it only re-renders when the value returned from the selector changes.
-   * @param selector A callback that takes accepts the current signal and returns a specific value from it's contents.
-   * @returns The value of the signal after the selector has been applied to it.
+   * @param selector A callback that takes accepts the current signal's value and returns a specific property from it's contents.
+   * @returns The selected property's value from the signal.
    * @since 1.7.3
    */
-  public useSelector = <R>(selector: Selector<Signal<T>, R>) => {
-    const prev = useRef<R>(selector(this));
-    const value = useRef<R>(selector(this));
+  public useSelector = <R>(selector: Selector<T, R>) => {
+    const prev = useRef<R>(selector(this.value));
+    const value = useRef<R>(selector(this.value));
     const [state, setState] = useState<R>(value.current);
 
     useEffect(() => {
       this.subscribe(() => {
-        value.current = selector(this);
+        value.current = selector(this.value);
 
         if (value.current !== prev.current) {
           prev.current = value.current;

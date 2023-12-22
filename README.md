@@ -164,6 +164,9 @@ In order to optimize performance, you can use the `useSelector` hook to subscrib
 
 This will prevent your component from re-rendering when other properties of the signal's value change.
 
+Please note that the `useSelector` should only be used if your signals is an object or array.
+If your signal is a primitive value, you should use the `useStateAdapter` hook instead.
+
 ```jsx
 // user.store.js
 
@@ -195,7 +198,7 @@ export const handleUpdateStreet = (street) => {
 import { userSignal, handleUpdateName, handleUpdateStreet } from './user.store';
 
 const User = () => {
-  const username = userSignal.useSelector((state) => state.value.name);
+  const username = userSignal.useSelector((value) => value.name);
 
   return (
     <div>
