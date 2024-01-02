@@ -1,7 +1,7 @@
 import { Selector } from '../types/selector.type';
 import { Callback } from '../types/callback.type';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { isObject, dereference, createDeepObjectObserver } from './proxy.utility';
+import { isObject, createDeepObjectObserver, deproxify } from './proxy.utility';
 
 class GlobalSignalEffects {
   public static active: Function | null = null;
@@ -15,6 +15,7 @@ class GlobalSignalEffects {
  */
 export class Signal<T> {
   #_value: T;
+  #_initial: T;
   #_is_processing_changes = false;
   #_subscribers = new Set<Callback<T>>();
   #_proxy_cache = new WeakMap<Object, Object>();
@@ -22,6 +23,7 @@ export class Signal<T> {
 
   constructor(initial: T) {
     this.#_value = initial;
+    this.#_initial = initial;
   }
 
   #_unsubscribe = (callback: Callback<T> | null) => {
@@ -32,6 +34,10 @@ export class Signal<T> {
 
   #_proxify = (value: T): T => {
     if (!isObject(value)) {
+      return value;
+    }
+
+    if (value instanceof Blob || value instanceof Date || value instanceof File || value instanceof RegExp) {
       return value;
     }
 
@@ -85,7 +91,7 @@ export class Signal<T> {
 
   set value(value: T) {
     this.#_unsubscribe(GlobalSignalEffects.active as Callback<T>);
-    this.#_value = dereference<T>(value);
+    this.#_value = deproxify<T>(value);
     this.#_notify();
   }
 
@@ -133,6 +139,14 @@ export class Signal<T> {
     return () => {
       this.#_subscriber_blacklist.add(callback);
     };
+  };
+
+  /**
+   * A method that allows you to reset the signal to it's initial value.
+   */
+  public reset = (): void => {
+    this.value = this.#_initial;
+    this.#_notify();
   };
 
   /**

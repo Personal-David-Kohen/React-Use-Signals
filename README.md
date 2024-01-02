@@ -7,15 +7,16 @@ It is inspired by Vue's Signals API and is based on their [Reactivity in Depth A
 ## Installation
 
 For NPM users:
-```bash 
+
+```bash
 npm install react-use-signals
 ```
 
 For Yarn users:
+
 ```bash
 yarn add react-use-signals
 ```
-
 
 ## Creating a Signal
 
@@ -77,15 +78,14 @@ export const userSignal = createSignal({
   },
 });
 
-export const handleUpdateName = (name) => {
+export const handleUpdateName = name => {
   userSignal.value.name = name;
 };
 
-export const handleUpdateStreet = (street) => {
+export const handleUpdateStreet = street => {
   userSignal.value.address.street = street;
 };
 ```
-
 
 ```jsx
 import { userSignal, handleUpdateName, handleUpdateStreet } from './userSignal';
@@ -101,13 +101,13 @@ const User = () => {
       <input
         type="text"
         value={user.value.name}
-        onChange={(e) => handleUpdateName(e.target.value)}
-        />
-        <input
-          type="text"
-          value={user.value.address.street}
-          onChange={(e) => handleUpdateStreet(e.target.value)}
-        />
+        onChange={e => handleUpdateName(e.target.value)}
+      />
+      <input
+        type="text"
+        value={user.value.address.street}
+        onChange={e => handleUpdateStreet(e.target.value)}
+      />
     </div>
   );
 };
@@ -148,7 +148,7 @@ It is similar to the `useEffect` hook, but is designed to be used outside of Rea
 Furthermore, it automatically knows which signals are used inside the function and doens't require a dependency array.
 
 ```jsx
-import {signalEffect} from 'react-use-signals';
+import { signalEffect } from 'react-use-signals';
 import { counterSignal } from './counterSignal';
 
 signalEffect(() => {
@@ -183,11 +183,11 @@ export const userSignal = createSignal({
   },
 });
 
-export const handleUpdateName = (name) => {
+export const handleUpdateName = name => {
   userSignal.value.name = name;
 };
 
-export const handleUpdateStreet = (street) => {
+export const handleUpdateStreet = street => {
   userSignal.value.address.street = street;
 };
 ```
@@ -198,30 +198,35 @@ export const handleUpdateStreet = (street) => {
 import { userSignal, handleUpdateName, handleUpdateStreet } from './user.store';
 
 const User = () => {
-  const username = userSignal.useSelector((value) => value.name);
+  const username = userSignal.useSelector(value => value.name);
 
   return (
     <div>
       <p>Name: {username}</p>
-      // Updating the name will cause this component to re-render since with selected the name property from the signal's value.
+      // Updating the name will cause this component to re-render since with selected
+      the name property from the signal's value.
       <input
         type="text"
         value={username}
-        onChange={(e) => handleUpdateName(e.target.value)}
-        />
-
-      // Updating the street will not cause this component to re-render since we did not select the street property from the signal's value.
+        onChange={e => handleUpdateName(e.target.value)}
+      />
+      // Updating the street will not cause this component to re-render since we
+      did not select the street property from the signal's value.
       <p>Street: {userSignal.value.address.street}</p>
       <input
         type="text"
         value={userSignal.value.address.street}
-        onChange={(e) => handleUpdateStreet(e.target.value)}
-      />   
+        onChange={e => handleUpdateStreet(e.target.value)}
+      />
     </div>
   );
 };
 ```
 
+## Reseting a signal
+
+Signals have a built-in method called reset that sets the value of the signal to the value it was initialied with.
+This can come in handy when submitting a form and you want to reset all of the fields
 
 ## Typescript
 
@@ -243,7 +248,6 @@ export const userSignal = createSignal<User>({
 
 If no type argument is provided, the signal will infer the type from the initial value.
 This can become problematic when the initial value is `null` or `undefined`, or an empty array or object.
-
 
 The signal itself is a generic type that takes the type of the initial value as an argument.
 
@@ -314,7 +318,3 @@ Where I explain how I came up with this solution and how it works under the hood
 ## Stay in touch
 
 If you have any questions or suggestions, feel free to open an issue on [Github](https://github.com/Personal-David-Kohen/React-Use-Signals.git).
-
-
-
-
